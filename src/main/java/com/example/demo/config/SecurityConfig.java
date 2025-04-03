@@ -30,6 +30,10 @@ public class SecurityConfig {
 	@Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		return http
+<<<<<<< HEAD
+=======
+				.cors(Customizer.withDefaults())
+>>>>>>> 7743e9f (add)
 	            .csrf(AbstractHttpConfigurer::disable) // Disable CSRF
 	            .authorizeHttpRequests(request -> request
 	                    // Public endpoints accessible to everyone
