@@ -40,8 +40,8 @@ public class UserController {
 
 	      // Generate JWT token after registration
 	      String token = jwtService.generateToken(user.getEmail(),user.getUserType());
-	      response.put("message", "User registered successfully");
-	      response.put("data", token);
+	      
+	      response.put("token", token);
 	      return response;
 	  }
 

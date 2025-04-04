@@ -63,8 +63,8 @@ public class ForgotPasswordController {
 
         // Create a response map
         Map<String, String> response = new HashMap<>();
-        response.put("message", "OTP sent to your email.");
-        response.put("data", token);
+       
+        response.put("token", token);
 
         return ResponseEntity.ok(response);
     }

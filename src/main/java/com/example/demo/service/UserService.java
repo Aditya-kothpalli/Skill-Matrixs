@@ -42,8 +42,8 @@ public class UserService {
 	        Users us = userRepo.findByEmail(user.getEmail());
 
 	        Map<String, String> response = new HashMap<>();
-	        response.put("message", "Login successful");
-	        response.put("data", jwtService.generateToken(user.getEmail(), us.getUserType()));
+	       
+	        response.put("token", jwtService.generateToken(user.getEmail(), us.getUserType()));
 
 	        return ResponseEntity.ok(response);
 	    }

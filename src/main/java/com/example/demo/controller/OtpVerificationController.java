@@ -49,8 +49,8 @@ public class OtpVerificationController {
 //        // Generate short-span JWT token (valid for 10 minutes)
 //        
         String token = jwtService.generateShortLivedToken(otpToken.getEmail(),10);
-	      response.put("message", "otp Verification is Successful");
-	      response.put("data", token);
+	      
+	      response.put("token", token);
 	      return response;
 
       
