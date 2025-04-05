@@ -28,21 +28,21 @@ public class UserController {
 	public ResponseEntity<Map<String, String>> login(@RequestBody Login user) {
 	    return userService.verify(user);
 	}
-	  @PostMapping("/register")
-	  public Map<String, String> register(@RequestBody Users user) {
-		 
-		   
-	      Map<String, String> response = new HashMap<>();
-	      user.setPassword(encoder.encode(user.getPassword()));
-	      
-	      
-	      Users us = userService.register(user);
+	@PostMapping("/register")
+	public ResponseEntity<Map<String, String>> register(@RequestBody Users user) {
 
-	      // Generate JWT token after registration
-	      String token = jwtService.generateToken(user.getEmail(),user.getUserType());
-	      
-	      response.put("token", token);
-	      return response;
-	  }
+	    Map<String, String> response = new HashMap<>();
+
+	    user.setPassword(encoder.encode(user.getPassword()));
+	    Users us = userService.register(user);
+
+	    // Generate JWT token
+	    String token = jwtService.generateToken(user.getEmail(), user.getUserType());
+
+	    response.put("token", token);
+	    response.put("role", user.getUserType().getRoleName());
+
+	    return ResponseEntity.ok(response); // 200 OK + token + role
+	}
 
 }

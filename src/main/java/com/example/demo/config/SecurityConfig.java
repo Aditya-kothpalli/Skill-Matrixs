@@ -40,6 +40,7 @@ public class SecurityConfig {
 	                    .requestMatchers("/hr/**").hasRole("HR")
 	                    .requestMatchers("/employee/**").hasRole("EMPLOYEE")
 	                    .requestMatchers("/student/**").hasRole("STUDENT")
+	                    .requestMatchers("/organization/**").hasRole("ORGANIZATION")
 	                    // HR-specific endpoints accessible only to HR role
 	                    .anyRequest().authenticated())
 	            .httpBasic(Customizer.withDefaults()) // Enable HTTP Basic authentication

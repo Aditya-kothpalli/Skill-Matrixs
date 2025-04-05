@@ -44,6 +44,7 @@ public class UserService {
 	        Map<String, String> response = new HashMap<>();
 	       
 	        response.put("token", jwtService.generateToken(user.getEmail(), us.getUserType()));
+	        response.put("role", us.getUserType().getRoleName());
 
 	        return ResponseEntity.ok(response);
 	    }

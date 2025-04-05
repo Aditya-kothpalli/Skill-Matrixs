@@ -7,40 +7,36 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.service.JWTService;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-@RestController
-@RequestMapping
-public class HRController {
 
+@RestController
+public class OrganizationController {
+	
 	@Autowired
 	private JWTService jwt;
 	
-	@GetMapping("/hr")
-	public ResponseEntity<Map<String, String>> getEmployeeWelcomeMessage(HttpServletRequest request) {
-	    // Extract JWT from Authorization header
+	@GetMapping("/organization")
+	public ResponseEntity<Map<String,String>> getEmployeeWelcomeMessage(HttpServletRequest request) {
+	    // Extract the JWT token from the Authorization header
+		Map<String, String> response = new HashMap<>();
 	    String authorizationHeader = request.getHeader("Authorization");
 	    if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-	        Map<String, String> error = new HashMap<>();
-	        error.put("error", "Invalid token!");
-	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+	         response.put("IN", "INVALID TOKEN");
+	         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
 	    }
-
 	    String token = authorizationHeader.replace("Bearer ", "");
 
-	    // Extract name from token
+	    // Extract the name from the token using JWTService
 	    String name = jwt.extractClaim(token, claims -> claims.get("name", String.class));
 
-	    // Create response map
-	    Map<String, String> response = new HashMap<>();
-	    
+	    // Return a welcome message
+	   
 	    response.put("name", name);
-
 	    return ResponseEntity.ok(response);
 	}
 
