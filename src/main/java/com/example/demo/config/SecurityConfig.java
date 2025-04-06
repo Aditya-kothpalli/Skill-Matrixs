@@ -35,18 +35,23 @@ public class SecurityConfig {
                  
 	            .csrf(AbstractHttpConfigurer::disable) // Disable CSRF
 	            .authorizeHttpRequests(request -> request
+	            	    .anyRequest().permitAll()
+	            	)
+
 	                    // Public endpoints accessible to everyone
-	                    .requestMatchers("/register", "/login","/auth/forgot-password").permitAll()
-	                    .requestMatchers("/hr/**").hasRole("HR")
-	                    .requestMatchers("/employee/**").hasRole("EMPLOYEE")
-	                    .requestMatchers("/student/**").hasRole("STUDENT")
-	                    .requestMatchers("/organization/**").hasRole("ORGANIZATION")
+	                   // .requestMatchers("/register", "/login","/auth/forgot-password").permitAll()
+	                    //.requestMatchers("/student/**").hasRole("STUDENT")
+	                    
+	                    
 	                    // HR-specific endpoints accessible only to HR role
-	                    .anyRequest().authenticated())
+	                   // .anyRequest().authenticated())
 	            .httpBasic(Customizer.withDefaults()) // Enable HTTP Basic authentication
-	            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session
+	            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 	            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class) // Add JWT filter
 	            .build();
+	            // Stateless session
+	            //.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class) // Add JWT filter
+	            
     }
 	@Bean
 	public AuthenticationProvider authenticationProvider() {

@@ -1,10 +1,9 @@
 package com.example.demo.model;
 
 public enum Role {
-    HR("HR"),
-    EMPLOYEE("EMPLOYEE"),
-    STUDENT("STUDENT"),
-	ORGANIZATION("ORGANIZATION");
+    
+    STUDENT("STUDENT");
+	
 	
 	 
     private final String roleName;

@@ -39,7 +39,7 @@ public class JWTService {
     public String generateToken(String email,Role userType) {
         Map<String, Object> claims = new HashMap<>();
         
-        String name = email.split("@")[0]; // Extract name from email
+        String name = email; // Extract name from email
 
         
         claims.put("name", name); 
@@ -59,7 +59,7 @@ public class JWTService {
     
     public String generateShortLivedToken(String email, int expirationMinutes) {
         Map<String, Object> claims = new HashMap<>();
-        String name = email.split("@")[0]; // Extract name from email
+        String name = email; // Extract name from email
 
         claims.put("name", name);
          // Purpose of this token

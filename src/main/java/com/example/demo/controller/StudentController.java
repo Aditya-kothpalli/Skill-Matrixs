@@ -1,41 +1,37 @@
 package com.example.demo.controller;
 
-import java.util.HashMap;
+import com.example.demo.DTO.SkillAssessmentDTO;
+import com.example.demo.DTO.UserDetailsDTO;
+import com.example.demo.model.SkillAssessment;
+import com.example.demo.model.UserProfile;
+import com.example.demo.service.SkillAssessmentService;
+import com.example.demo.service.UserProfileService;
+
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-
-import org.springframework.web.bind.annotation.RestController;
-
-import com.example.demo.service.JWTService;
-
-import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping("/api/student")
 public class StudentController {
 
-	@Autowired
-	private JWTService jwt;
-	
-	@GetMapping("/student")
-	public ResponseEntity<Map<String,String>> getEmployeeWelcomeMessage(HttpServletRequest request) {
-	    // Extract the JWT token from the Authorization header
-		Map<String,String> a1= new HashMap<>();
-	    String authorizationHeader = request.getHeader("Authorization");
-	    if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-	        a1.put("error","Invalid token!");
-	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(a1);
-	    }
-	    String token = authorizationHeader.replace("Bearer ", "");
+    @Autowired
+    private UserProfileService profileService;
 
-	    // Extract the name from the token using JWTService
-	    String name = jwt.extractClaim(token, claims -> claims.get("name", String.class));
+    
 
-	    // Return a welcome message
-	    a1.put("name", name);
-	    return ResponseEntity.ok(a1);
-	}
+    // Submit user profile details
+    @PostMapping("/profile")
+    public ResponseEntity<Map<String, String>> addProfile(@RequestBody UserDetailsDTO dto) {
+    	 Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    	    String email = auth.getName(); 
+           return profileService.saveUserProfile(email, dto);
+    }
+
+    
+    
 }
