@@ -10,7 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class RoleService {
@@ -42,4 +45,23 @@ public class RoleService {
 
         return roleRepository.save(role);
     }
+    
+    public Map<String, Object> getRoleWithSkills(String roleName) {
+        RoleEntity role = roleRepository.findByRoleName(roleName);
+        Map<String, Object> roleMap = new HashMap<>();
+
+        if (role == null) return roleMap;
+
+        roleMap.put("roleName", role.getRoleName());
+
+        List<String> skillNames = role.getSkills()
+                                      .stream()
+                                      .map(skill -> skill.getSkillName())
+                                      .collect(Collectors.toList());
+
+        roleMap.put("skills", skillNames);
+        return roleMap;
+    }
+
+
 }

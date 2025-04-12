@@ -12,6 +12,10 @@ import jakarta.persistence.Table;
 
 import jakarta.persistence.*;
 
+
+
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "skill_assessment")
 public class SkillAssessment {
@@ -22,13 +26,18 @@ public class SkillAssessment {
 
     // 🧑 User who submitted the skill assessment
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private Users user;
 
     // 🎯 Skill being assessed (e.g., Linux, AWS)
     @ManyToOne
-    @JoinColumn(name = "skill_id")
+    @JoinColumn(name = "skill_id", nullable = false)
     private Skill skill;
+
+    // 🎓 Role the skill assessment is associated with (e.g., DevOps, Backend)
+    @ManyToOne
+    @JoinColumn(name = "role_id", nullable = false)
+    private RoleEntity role;
 
     // 📊 Skill level (e.g., Beginner, Intermediate, Expert)
     private String level;
@@ -36,7 +45,17 @@ public class SkillAssessment {
     // ✅ Verification status - to be done by SME
     private boolean isVerified = false;
 
-    // 🕵️ You can add fields later like who verified, verifiedDate etc. if needed
+    // 🧑 Verified by (e.g., admin or SME)
+    @Column(name = "verified_by")
+    private String verifiedBy;
+
+    // 🕒 Date of verification
+    @Column(name = "verification_date")
+    private LocalDateTime verificationDate;
+
+    // 💬 Comments or feedback from verifier
+    @Column(name = "comments", length = 500)
+    private String comments;
 
     // ---------- Getters and Setters -----------
 
@@ -64,6 +83,14 @@ public class SkillAssessment {
         this.skill = skill;
     }
 
+    public RoleEntity getRole() {
+        return role;
+    }
+
+    public void setRole(RoleEntity role) {
+        this.role = role;
+    }
+
     public String getLevel() {
         return level;
     }
@@ -78,5 +105,29 @@ public class SkillAssessment {
 
     public void setVerified(boolean verified) {
         isVerified = verified;
+    }
+
+    public String getVerifiedBy() {
+        return verifiedBy;
+    }
+
+    public void setVerifiedBy(String verifiedBy) {
+        this.verifiedBy = verifiedBy;
+    }
+
+    public LocalDateTime getVerificationDate() {
+        return verificationDate;
+    }
+
+    public void setVerificationDate(LocalDateTime verificationDate) {
+        this.verificationDate = verificationDate;
+    }
+
+    public String getComments() {
+        return comments;
+    }
+
+    public void setComments(String comments) {
+        this.comments = comments;
     }
 }

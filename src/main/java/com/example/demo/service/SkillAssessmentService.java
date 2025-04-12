@@ -1,29 +1,30 @@
 package com.example.demo.service;
 
-
-
-
-
 import com.example.demo.DTO.SkillAssessmentDTO;
+import com.example.demo.DTO.SkillAssessmentSMEDTO;
 import com.example.demo.model.RoleEntity;
 import com.example.demo.model.Skill;
 import com.example.demo.model.SkillAssessment;
 
+import com.example.demo.model.SkillsAssessmentSME;
 import com.example.demo.model.Users;
 import com.example.demo.repo.RoleRepository;
 import com.example.demo.repo.SkillAssessmentRepository;
-import com.example.demo.repo.SkillRepository;
+
+import com.example.demo.repo.SmeRepo;
 import com.example.demo.repo.UserRepo;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class SkillAssessmentService {
-
+	
+	@Autowired
+	private SmeRepo sr;
 
     @Autowired
     private UserRepo userRepo;
@@ -32,60 +33,201 @@ public class SkillAssessmentService {
     private RoleRepository roleRepo;
 
     @Autowired
-    private SkillRepository skillRepo;
-
-    @Autowired
     private SkillAssessmentRepository assessmentRepo;
+    
+   
 
-    public String saveAssessment(String email, SkillAssessmentDTO dto) {
+    public Map<String, Object> getRoleSkillsWithStatus(String email, String roleName) {
+        Map<String, Object> response = new HashMap<>();
         Users user = userRepo.findByEmail(email);
+        RoleEntity role = roleRepo.findByRoleName(roleName);
 
-        if (user.getUserProfile() == null || !user.getUserProfile().isProfileSubmitted()) {
-            return "Please submit your profile before skill assessment.";
-        }
-
-        RoleEntity role = roleRepo.findByRoleName(dto.getRoleName());
-        if (role == null) {
-            return "Role not found.";
+        if (user == null || role == null) {
+            response.put("status", false);
+            response.put("message", "Invalid user or role.");
+            return response;
         }
 
         List<Skill> roleSkills = role.getSkills();
+        List<SkillAssessment> assessments = assessmentRepo.findByUserAndRole(user, role);
 
-        for (String submittedSkillName : dto.getSkillLevels().keySet()) {
-            boolean exists = roleSkills.stream()
-                    .anyMatch(skill -> skill.getSkillName().equalsIgnoreCase(submittedSkillName));
+        List<Map<String, Object>> skillDataList = new ArrayList<>();
 
-            if (!exists) {
-                return "Skill " + submittedSkillName + " is not part of the role: " + dto.getRoleName();
+        for (Skill skill : roleSkills) {
+            Optional<SkillAssessment> assessment = assessments.stream()
+                    .filter(a -> a.getSkill().equals(skill))
+                    .findFirst();
+
+            Map<String, Object> skillData = new HashMap<>();
+            skillData.put("skillName", skill.getSkillName());
+
+            if (assessment.isPresent()) {
+                SkillAssessment skillAssessment = assessment.get();
+                skillData.put("status", skillAssessment.isVerified() ? "Verified" : "Verifying");
+                skillData.put("level", skillAssessment.getLevel());
+            } else {
+                skillData.put("status", "Unverified");
+                skillData.put("level", null);
             }
+
+            skillDataList.add(skillData);
         }
 
-        List<SkillAssessment> existingAssessments = assessmentRepo.findByUser(user);
-        for (SkillAssessment existing : existingAssessments) {
-            if (dto.getSkillLevels().containsKey(existing.getSkill().getSkillName())) {
-                return "Assessment already submitted for skill: " + existing.getSkill().getSkillName();
-            }
+//        response.put("status", true);
+//        response.put("message", "Role and skills fetched successfully.");
+        response.put("data", Map.of(
+            "roleName", role.getRoleName(),
+            "skills", skillDataList
+        ));
+
+        return response;
+    }
+
+    public Map<String, Object> saveAssessmentAndFetchStatus(String email, SkillAssessmentDTO dto) {
+        Users user = userRepo.findByEmail(email);
+        RoleEntity role = roleRepo.findByRoleName(dto.getRoleName());
+
+        if (user == null || role == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", false);
+            response.put("message", "Invalid user or role.");
+            return response;
         }
 
-        for (Map.Entry<String, String> entry : dto.getSkillLevels().entrySet()) {
+        List<Skill> roleSkills = role.getSkills();
+        Map<String, String> incomingSkills = dto.getSkillLevels();
+
+        List<SkillAssessment> submittedAssessments = assessmentRepo.findByUserAndRole(user, role);
+        Map<Skill, SkillAssessment> skillAssessmentMap = submittedAssessments.stream()
+                .collect(Collectors.toMap(SkillAssessment::getSkill, assessment -> assessment));
+
+        List<Map<String, Object>> skillStatuses = new ArrayList<>();
+        boolean hasAlreadyAddedSkills = false;
+
+        for (Map.Entry<String, String> entry : incomingSkills.entrySet()) {
+            String skillName = entry.getKey();
+            String level = entry.getValue();
+
             Skill skill = roleSkills.stream()
-                    .filter(s -> s.getSkillName().equalsIgnoreCase(entry.getKey()))
+                    .filter(s -> s.getSkillName().equalsIgnoreCase(skillName))
                     .findFirst()
                     .orElse(null);
 
-            if (skill == null) {
-                return "Skill not found: " + entry.getKey();
+            if (skill != null) {
+                SkillAssessment existingAssessment = skillAssessmentMap.get(skill);
+
+                Map<String, Object> skillStatus = new HashMap<>();
+                skillStatus.put("skillName", skillName);
+
+                if (existingAssessment != null) {
+                    if (existingAssessment.getLevel().equals(level)) {
+                        skillStatus.put("status", "Already Submitted");
+                        skillStatus.put("level", level);
+                        hasAlreadyAddedSkills = true; // Track if already added skills exist
+                    } else {
+                        existingAssessment.setLevel(level);
+                        assessmentRepo.save(existingAssessment);
+                        skillStatus.put("status", "Verifying");
+                        skillStatus.put("level", level);
+                    }
+                } else {
+                    SkillAssessment newAssessment = new SkillAssessment();
+                    newAssessment.setUser(user);
+                    newAssessment.setRole(role);
+                    newAssessment.setSkill(skill);
+                    newAssessment.setLevel(level);
+                    newAssessment.setVerified(false);
+                    assessmentRepo.save(newAssessment);
+                    skillStatus.put("status", "Verifying");
+                    skillStatus.put("level", level);
+                }
+
+                skillStatuses.add(skillStatus);
             }
-
-            SkillAssessment assessment = new SkillAssessment();
-            assessment.setUser(user);
-            assessment.setSkill(skill);
-            assessment.setLevel(entry.getValue());
-            assessment.setVerified(false);
-
-            assessmentRepo.save(assessment);
         }
 
-        return "Skill assessment submitted successfully!";
+        for (Skill skill : roleSkills) {
+            if (!incomingSkills.containsKey(skill.getSkillName())) {
+                SkillAssessment existingAssessment = skillAssessmentMap.get(skill);
+
+                Map<String, Object> skillStatus = new HashMap<>();
+                skillStatus.put("skillName", skill.getSkillName());
+
+                if (existingAssessment != null) {
+                    skillStatus.put("status", existingAssessment.isVerified() ? "Verified" : "Verifying");
+                    skillStatus.put("level", existingAssessment.getLevel());
+                } else {
+                    skillStatus.put("status", "Unverified");
+                    skillStatus.put("level", null);
+                }
+
+                skillStatuses.add(skillStatus);
+            }
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", true);
+        if (hasAlreadyAddedSkills) {
+            response.put("message", "Some skills were already added.");
+        } else {
+            response.put("message", "Skill assessment processed successfully.");
+        }
+        response.put("data", Map.of(
+                "roleName", dto.getRoleName(),
+                "skills", skillStatuses
+        ));
+
+        return response;
     }
+    
+
+    public Map<String, Object> submitToSME(String email, SkillAssessmentSMEDTO dto) {
+        Map<String, Object> response = new HashMap<>();
+
+        // Check if the user already submitted SME details
+        if (sr.existsByUserEmailAndSubmittedToSMETrue(email)) {
+            response.put("status", false);
+            response.put("message", "You have already submitted your details to the SME and cannot modify them.");
+            return response;
+        }
+
+        // Convert skills Map to a concatenated String
+        String skillsAsString = dto.getSkills().entrySet().stream()
+                .map(entry -> entry.getKey() + ":" + entry.getValue()) // Format: "Skill:Level"
+                .collect(Collectors.joining(", ")); // Combine with a comma and space
+
+        // Save the details to the database
+        SkillsAssessmentSME assessment = new SkillsAssessmentSME();
+        assessment.setUserEmail(email);
+        assessment.setRole(dto.getRole());
+        assessment.setSubmittedToSME(true);
+        assessment.setStatus("Pending");
+        assessment.setSkills(skillsAsString); // Set the concatenated string
+
+        sr.save(assessment); // Save to the database
+
+        response.put("status", true);
+        response.put("message", "Details submitted successfully.");
+        return response;
+    }
+
+    // Utility to parse skills back into a Map<String, String>
+    public Map<String, String> parseSkills(String skills) {
+        if (skills == null || skills.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        return Arrays.stream(skills.split(", ")) // Split by comma and space
+                .map(skill -> skill.split(":")) // Split each "Skill:Level"
+                .collect(Collectors.toMap(
+                        parts -> parts[0], // Skill name
+                        parts -> parts[1]  // Skill level
+                ));
+    }
+    
 }
+
+    // Add a new SkillResource
+  
+
+

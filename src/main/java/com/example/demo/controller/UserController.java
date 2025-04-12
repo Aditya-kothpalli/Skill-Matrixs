@@ -12,7 +12,7 @@ import com.example.demo.model.Login;
 import com.example.demo.model.Users;
 import com.example.demo.service.JWTService;
 import com.example.demo.service.UserService;
-import org.springframework.security.core.userdetails.UserDetails;
+
 
 @RestController
 public class UserController {
@@ -34,7 +34,7 @@ public class UserController {
 	    Map<String, String> response = new HashMap<>();
 
 	    user.setPassword(encoder.encode(user.getPassword()));
-	    Users us = userService.register(user);
+	    userService.register(user);
 
 	    // Generate JWT token
 	   String token = jwtService.generateToken(user.getEmail(), user.getUserType());
